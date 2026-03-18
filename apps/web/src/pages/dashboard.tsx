@@ -1,0 +1,7 @@
+export function Dashboard() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <h1 className="font-bold text-4xl">CDN Mark Life</h1>
+    </div>
+  );
+}

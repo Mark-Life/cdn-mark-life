@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # Dependencies
 node_modules
 .pnp
@@ -18,15 +16,11 @@ coverage
 # Turbo
 .turbo
 
-# Vercel
-.vercel
-
 # Build Outputs
 .next/
 out/
 build
 dist
-
 
 # Debug
 npm-debug.log*
@@ -37,3 +31,10 @@ npm-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Terraform
+infrastructure/terraform/.terraform/
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.backup
+infrastructure/terraform/*.tfvars
+infrastructure/terraform/.terraform.lock.hcl

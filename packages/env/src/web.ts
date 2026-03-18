@@ -1,29 +1,12 @@
-import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
-import "./load-root-env";
 
-export const env = createEnv({
-  server: {
-    NODE_ENV: z
-      .enum(["development", "production", "test"])
-      .default("development"),
-    // Add server env vars here
-    // DATABASE_URL: z.string().url(),
-  },
-  client: {
-    // Add client env vars here (must be prefixed with NEXT_PUBLIC_)
-    // NEXT_PUBLIC_APP_URL: z.string().url(),
-  },
-  runtimeEnv: {
-    NODE_ENV: process.env.NODE_ENV,
-    // Map all declared vars to process.env here
-    // DATABASE_URL: process.env.DATABASE_URL,
-    // NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-  },
-  /**
-   * Skip validation in docker builds or CI where env vars aren't available.
-   * Set SKIP_ENV_VALIDATION=1 to bypass.
-   */
-  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
-  emptyStringAsUndefined: true,
+const envSchema = z.object({
+  VITE_CONVEX_URL: z.string().url(),
+  VITE_CDN_BASE_URL: z.string().url().optional(),
 });
+
+export type Env = z.infer<typeof envSchema>;
+
+export function validateEnv(env: Record<string, string | undefined>): Env {
+  return envSchema.parse(env);
+}
