@@ -1,11 +1,22 @@
 import {
-  GetObjectCommand,
+  CloudFrontClient,
+  CreateInvalidationCommand,
+} from "@aws-sdk/client-cloudfront";
+import {
+  DeleteObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v } from "convex/values";
-import { action, mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
+import {
+  action,
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "./_generated/server";
 
 const PRESIGNED_URL_EXPIRY_SECONDS = 3600;
 
@@ -25,6 +36,26 @@ function getBucketName(): string {
     throw new Error("S3_BUCKET_NAME environment variable is not set");
   }
   return bucket;
+}
+
+function getCloudFrontClient(): CloudFrontClient {
+  return new CloudFrontClient({
+    region: "us-east-1",
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "",
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "",
+    },
+  });
+}
+
+function getDistributionId(): string {
+  const id = process.env.CLOUDFRONT_MEDIA_DISTRIBUTION_ID;
+  if (!id) {
+    throw new Error(
+      "CLOUDFRONT_MEDIA_DISTRIBUTION_ID environment variable is not set"
+    );
+  }
+  return id;
 }
 
 export const list = query({
@@ -70,28 +101,6 @@ export const getUploadUrl = action({
   },
 });
 
-export const getDownloadUrl = action({
-  args: {
-    accountSlug: v.string(),
-    filePath: v.string(),
-  },
-  handler: async (_ctx, args) => {
-    const s3 = getS3Client();
-    const key = `${args.accountSlug}/${args.filePath}`;
-
-    const command = new GetObjectCommand({
-      Bucket: getBucketName(),
-      Key: key,
-    });
-
-    const url = await getSignedUrl(s3, command, {
-      expiresIn: PRESIGNED_URL_EXPIRY_SECONDS,
-    });
-
-    return { url };
-  },
-});
-
 export const recordUpload = mutation({
   args: {
     accountId: v.id("accounts"),
@@ -109,11 +118,60 @@ export const recordUpload = mutation({
   },
 });
 
-export const remove = mutation({
+export const getById = internalQuery({
+  args: {
+    fileId: v.id("files"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.fileId);
+  },
+});
+
+export const removeRecord = internalMutation({
   args: {
     fileId: v.id("files"),
   },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.fileId);
+  },
+});
+
+export const deleteFile = action({
+  args: {
+    fileId: v.id("files"),
+  },
+  handler: async (ctx, args) => {
+    const file = await ctx.runQuery(internal.files.getById, {
+      fileId: args.fileId,
+    });
+    if (!file) {
+      throw new Error("File not found");
+    }
+
+    const s3 = getS3Client();
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: getBucketName(),
+        Key: file.s3Key,
+      })
+    );
+
+    const cf = getCloudFrontClient();
+    await cf.send(
+      new CreateInvalidationCommand({
+        DistributionId: getDistributionId(),
+        InvalidationBatch: {
+          CallerReference: `${file.s3Key}-${Date.now()}`,
+          Paths: {
+            Quantity: 1,
+            Items: [`/${file.s3Key}`],
+          },
+        },
+      })
+    );
+
+    await ctx.runMutation(internal.files.removeRecord, {
+      fileId: args.fileId,
+    });
   },
 });

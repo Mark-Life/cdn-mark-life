@@ -73,6 +73,7 @@ bunx convex env set AWS_REGION eu-north-1
 bunx convex env set AWS_ACCESS_KEY_ID <your-key>
 bunx convex env set AWS_SECRET_ACCESS_KEY <your-secret>
 bunx convex env set S3_BUCKET_NAME <your-bucket>
+ bunx convex env set CLOUDFRONT_MEDIA_DISTRIBUTION_ID <CLOUDFRONT_MEDIA_DISTRIBUTION_ID>
 ```
 
 ### Infrastructure
@@ -86,12 +87,14 @@ terraform apply
 
 ## Commands
 
-| Command | Description |
-| --- | --- |
-| `bun run dev` | Start all apps in dev mode |
-| `bun run build` | Build all apps and packages |
-| `bun run fix` | Auto-fix formatting and lint issues |
-| `bun run check` | Check for lint/format issues |
+
+| Command         | Description                         |
+| --------------- | ----------------------------------- |
+| `bun run dev`   | Start all apps in dev mode          |
+| `bun run build` | Build all apps and packages         |
+| `bun run fix`   | Auto-fix formatting and lint issues |
+| `bun run check` | Check for lint/format issues        |
+
 
 ## Adding UI Components
 
@@ -128,3 +131,4 @@ Pushing to `main` triggers the GitHub Actions pipeline:
 2. Syncs build output to the app S3 bucket
 3. Invalidates the CloudFront cache
 4. Deploys Convex backend functions
+
