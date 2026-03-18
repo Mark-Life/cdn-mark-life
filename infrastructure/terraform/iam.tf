@@ -27,6 +27,15 @@ resource "aws_iam_user_policy" "convex_s3_access" {
           aws_s3_bucket.media.arn,
           "${aws_s3_bucket.media.arn}/*",
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudfront:CreateInvalidation",
+        ]
+        Resource = [
+          aws_cloudfront_distribution.media.arn,
+        ]
       }
     ]
   })
