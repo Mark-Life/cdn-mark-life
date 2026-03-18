@@ -5,9 +5,9 @@ A CDN and file management platform built on AWS S3 + CloudFront with a Convex re
 ## Architecture
 
 ```
-Browser ──(HTTPS)──► CloudFront ──► S3    (app.mark-life.com — Vite React SPA)
+Browser ──(HTTPS)──► CloudFront ──► S3    (cdn.mark-life.com — Vite React SPA)
 Browser ──(WSS)────► Convex Cloud          (real-time DB, auth, file metadata)
-Browser ──(HTTPS)──► CloudFront ──► S3    (cdn.mark-life.com — media files)
+Browser ──(HTTPS)──► CloudFront ──► S3    (static.mark-life.com — media files)
 ```
 
 ## What's Inside

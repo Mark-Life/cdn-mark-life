@@ -4,10 +4,10 @@ CDN and file management platform using AWS S3 + CloudFront with Convex backend.
 
 ## Architecture
 
-- **Frontend**: Vite + React SPA deployed to S3/CloudFront (`app.mark-life.com`)
+- **Frontend**: Vite + React SPA deployed to S3/CloudFront (`cdn.mark-life.com`)
 - **Backend**: Convex (real-time DB, auth via WorkOS, file metadata)
 - **Storage**: AWS S3 with account-based prefix isolation (`{accountSlug}/...`)
-- **CDN**: CloudFront distribution for media files (`cdn.mark-life.com`)
+- **CDN**: CloudFront distribution for media files (`static.mark-life.com`)
 - **Infrastructure**: Terraform (S3, CloudFront, Route 53, ACM, IAM)
 - **Auth**: WorkOS via Convex AuthKit component
 

@@ -11,15 +11,15 @@ variable "domain_name" {
 }
 
 variable "cdn_subdomain" {
-  description = "Subdomain for media CDN"
+  description = "Subdomain for static media files"
   type        = string
-  default     = "cdn"
+  default     = "static"
 }
 
 variable "app_subdomain" {
   description = "Subdomain for the web application"
   type        = string
-  default     = "app"
+  default     = "cdn"
 }
 
 variable "environment" {
