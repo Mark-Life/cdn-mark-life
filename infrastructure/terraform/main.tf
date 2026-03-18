@@ -19,10 +19,14 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# ─── Route 53 ────────────────────────────────────────────────────────────────
+# ─── Route 53 (subdomain hosted zones) ───────────────────────────────────────
 
-data "aws_route53_zone" "main" {
-  name = var.domain_name
+data "aws_route53_zone" "cdn" {
+  name = "${var.cdn_subdomain}.${var.domain_name}"
+}
+
+data "aws_route53_zone" "app" {
+  name = "${var.app_subdomain}.${var.domain_name}"
 }
 
 # ─── ACM Certificate (us-east-1 for CloudFront) ─────────────────────────────
@@ -41,6 +45,14 @@ resource "aws_acm_certificate" "cdn" {
   }
 }
 
+# Map each domain validation option to the correct hosted zone
+locals {
+  cert_validation_zones = {
+    "${var.cdn_subdomain}.${var.domain_name}" = data.aws_route53_zone.cdn.zone_id
+    "${var.app_subdomain}.${var.domain_name}" = data.aws_route53_zone.app.zone_id
+  }
+}
+
 resource "aws_route53_record" "cert_validation" {
   for_each = {
     for dvo in aws_acm_certificate.cdn.domain_validation_options : dvo.domain_name => {
@@ -50,7 +62,7 @@ resource "aws_route53_record" "cert_validation" {
     }
   }
 
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = local.cert_validation_zones[each.key]
   name    = each.value.name
   type    = each.value.type
   ttl     = 60
@@ -81,7 +93,7 @@ resource "aws_s3_bucket_cors_configuration" "media" {
 
   cors_rule {
     allowed_headers = ["*"]
-    allowed_methods = ["GET", "PUT", "POST"]
+    allowed_methods = ["GET", "PUT", "POST", "DELETE"]
     allowed_origins = [
       "https://${var.app_subdomain}.${var.domain_name}",
       "http://localhost:5173",
@@ -189,18 +201,9 @@ resource "aws_cloudfront_distribution" "media" {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "media-s3"
+    compress               = true
     viewer_protocol_policy = "redirect-to-https"
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-
-    min_ttl     = 0
-    default_ttl = 86400
-    max_ttl     = 31536000
+    cache_policy_id        = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
   }
 
   restrictions {
@@ -236,18 +239,9 @@ resource "aws_cloudfront_distribution" "app" {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "app-s3"
+    compress               = true
     viewer_protocol_policy = "redirect-to-https"
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-
-    min_ttl     = 0
-    default_ttl = 86400
-    max_ttl     = 31536000
+    cache_policy_id        = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
   }
 
   # SPA: route all 403/404 to index.html for client-side routing
@@ -281,7 +275,7 @@ resource "aws_cloudfront_distribution" "app" {
 # ─── Route 53 Records ───────────────────────────────────────────────────────
 
 resource "aws_route53_record" "cdn" {
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = data.aws_route53_zone.cdn.zone_id
   name    = "${var.cdn_subdomain}.${var.domain_name}"
   type    = "A"
 
@@ -293,9 +287,35 @@ resource "aws_route53_record" "cdn" {
 }
 
 resource "aws_route53_record" "app" {
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = data.aws_route53_zone.app.zone_id
   name    = "${var.app_subdomain}.${var.domain_name}"
   type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.app.domain_name
+    zone_id                = aws_cloudfront_distribution.app.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# ─── Route 53 AAAA Records (IPv6) ─────────────────────────────────────────
+
+resource "aws_route53_record" "cdn_ipv6" {
+  zone_id = data.aws_route53_zone.cdn.zone_id
+  name    = "${var.cdn_subdomain}.${var.domain_name}"
+  type    = "AAAA"
+
+  alias {
+    name                   = aws_cloudfront_distribution.media.domain_name
+    zone_id                = aws_cloudfront_distribution.media.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "app_ipv6" {
+  zone_id = data.aws_route53_zone.app.zone_id
+  name    = "${var.app_subdomain}.${var.domain_name}"
+  type    = "AAAA"
 
   alias {
     name                   = aws_cloudfront_distribution.app.domain_name
