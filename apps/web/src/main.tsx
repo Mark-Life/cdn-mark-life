@@ -1,5 +1,6 @@
 import { AuthKitProvider, useAuth } from "@workos-inc/authkit-react";
 import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
+import { ThemeProvider } from "next-themes";
 import { StrictMode, useCallback, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
@@ -39,9 +40,11 @@ createRoot(root).render(
       redirectUri={import.meta.env.VITE_WORKOS_REDIRECT_URI}
     >
       <ConvexProviderWithAuth client={convex} useAuth={useConvexAuth}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ThemeProvider>
       </ConvexProviderWithAuth>
     </AuthKitProvider>
   </StrictMode>

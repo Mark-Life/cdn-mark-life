@@ -1,49 +1,67 @@
-import { useAuth } from "@workos-inc/authkit-react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
+import { DatabaseIcon, FolderIcon, GlobeIcon } from "lucide-react";
 import { api } from "../../../convex/convex/_generated/api";
 
 export function Dashboard() {
-  const { signIn, signOut } = useAuth();
-  const { isAuthenticated, isLoading } = useConvexAuth();
-  const user = useQuery(api.auth.getCurrentUser, isAuthenticated ? {} : "skip");
+  const user = useQuery(api.auth.getCurrentUser);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6">
-      <h1 className="font-bold text-4xl">CDN Mark Life</h1>
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
+      {/* Welcome */}
+      <div className="flex flex-col gap-1">
+        <h1 className="font-semibold text-lg tracking-tight">
+          {user
+            ? `Welcome, ${[user.firstName, user.lastName].filter(Boolean).join(" ") || user.email}`
+            : "Dashboard"}
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Manage your files and accounts from here.
+        </p>
+      </div>
 
-      {(() => {
-        if (isLoading) {
-          return <p className="text-muted-foreground">Loading...</p>;
-        }
-        if (isAuthenticated) {
-          return (
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-lg">
-                Signed in as{" "}
-                <span className="font-semibold">{user?.email}</span>
-              </p>
-              <button
-                className="rounded-md bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-700"
-                onClick={() => signOut()}
-                type="button"
-              >
-                Sign out
-              </button>
-            </div>
-          );
-        }
-        return (
-          <button
-            className="rounded-md bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-700"
-            onClick={() => {
-              signIn();
-            }}
-            type="button"
+      {/* Quick stats placeholders */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[
+          {
+            icon: FolderIcon,
+            label: "Files",
+            value: "--",
+            sub: "Across all accounts",
+          },
+          {
+            icon: DatabaseIcon,
+            label: "Storage",
+            value: "--",
+            sub: "Total usage",
+          },
+          {
+            icon: GlobeIcon,
+            label: "CDN",
+            value: "Active",
+            sub: "static.mark-life.com",
+          },
+        ].map(({ icon: Icon, label, value, sub }) => (
+          <div
+            className="flex flex-col gap-3 rounded-lg border p-4"
+            key={label}
           >
-            Sign in
-          </button>
-        );
-      })()}
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Icon className="size-3.5" />
+              <span className="font-mono text-[11px] uppercase tracking-wider">
+                {label}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-semibold text-2xl tracking-tight">
+                {value}
+              </span>
+              <span className="font-mono text-[10px] text-muted-foreground">
+                {sub}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

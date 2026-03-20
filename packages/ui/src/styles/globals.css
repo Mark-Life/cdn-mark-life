@@ -8,6 +8,11 @@
 
 html {
   scroll-behavior: smooth;
+  font-family: "DM Sans", system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
 :root {

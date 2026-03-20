@@ -7,7 +7,10 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
+    "skipLibCheck": true,
+    "declaration": false,
+    "declarationMap": false,
     "noEmit": true,
     "module": "ESNext",
     "moduleResolution": "bundler"
