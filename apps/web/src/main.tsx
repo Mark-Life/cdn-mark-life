@@ -1,11 +1,31 @@
-import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { StrictMode } from "react";
+import { AuthKitProvider, useAuth } from "@workos-inc/authkit-react";
+import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
+import { StrictMode, useCallback, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./app";
 import "@workspace/ui/globals.css";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
+
+function useConvexAuth() {
+  const { isLoading, user, getAccessToken } = useAuth();
+  const fetchAccessToken = useCallback(
+    async (_args: { forceRefreshToken: boolean }) => {
+      const token = await getAccessToken();
+      return token ?? null;
+    },
+    [getAccessToken]
+  );
+  return useMemo(
+    () => ({
+      isLoading,
+      isAuthenticated: !isLoading && !!user,
+      fetchAccessToken,
+    }),
+    [isLoading, user, fetchAccessToken]
+  );
+}
 
 const root = document.getElementById("root");
 if (!root) {
@@ -14,10 +34,15 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <ConvexProvider client={convex}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </ConvexProvider>
+    <AuthKitProvider
+      clientId={import.meta.env.VITE_WORKOS_CLIENT_ID}
+      redirectUri={import.meta.env.VITE_WORKOS_REDIRECT_URI}
+    >
+      <ConvexProviderWithAuth client={convex} useAuth={useConvexAuth}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ConvexProviderWithAuth>
+    </AuthKitProvider>
   </StrictMode>
 );

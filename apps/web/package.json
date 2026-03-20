@@ -10,6 +10,8 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@convex-dev/workos-authkit": "^0.1.7",
+    "@workos-inc/authkit-react": "^0.16.0",
     "@workspace/ui": "workspace:*",
     "convex": "^1.21.0",
     "lucide-react": "^0.563.0",
